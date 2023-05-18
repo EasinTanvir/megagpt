@@ -6,6 +6,7 @@ require("dotenv").config();
 const cors = require("cors");
 const gptRoutes = require("./routes/user");
 const authRoutes = require("./routes/auth");
+const adminRoutes = require("./routes/admin");
 const { Configuration, OpenAIApi } = require("openai");
 
 app.use(cors());
@@ -28,6 +29,7 @@ app.set("gpt", openApi);
 
 app.use(gptRoutes);
 app.use(authRoutes);
+app.use(adminRoutes);
 
 app.use((req, res, next) => {
   const errors = new HttpError("No routes found for this path", 404);

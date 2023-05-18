@@ -6,6 +6,8 @@ const auth = new mongoose.Schema({
   resetToken: { type: String },
   resetTokenExpire: { type: Date },
   extraId: { type: String, default: null },
+  isAdmin: { type: Boolean, default: false },
+  block: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("auth", auth);

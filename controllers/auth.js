@@ -117,7 +117,7 @@ const signIn = async (req, res, next) => {
   let token;
   try {
     token = jwt.sign(
-      { id: user.extraId, token: token },
+      { id: user.extraId, token: token, isAdmin: user.isAdmin },
       process.env.TOKEN_KEY,
       {
         expiresIn: "24h",
@@ -132,6 +132,7 @@ const signIn = async (req, res, next) => {
     id: user.extraId,
     email: user.email,
     token: token,
+    isAdmin: user.isAdmin,
   });
 };
 
@@ -165,7 +166,7 @@ const googleSignIn = async (req, res, next) => {
   let token;
   try {
     token = jwt.sign(
-      { id: user.extraId, token: token },
+      { id: user.extraId, token: token, isAdmin: user.isAdmin },
       process.env.TOKEN_KEY,
       {
         expiresIn: "24h",
@@ -180,6 +181,7 @@ const googleSignIn = async (req, res, next) => {
     id: user.extraId,
     email: user.email,
     token: token,
+    isAdmin: user.isAdmin,
   });
 };
 

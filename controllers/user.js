@@ -1,13 +1,29 @@
 const MESSAGE = require("../models/gpt");
+const USER = require("../models/auth");
 const EXTRA = require("../models/extrauser");
 const CONVERSATION = require("../models/conversation");
 const HttpError = require("../helper/HttpError");
+const bcrypt = require("bcryptjs");
 
 const createGpt = async (req, res, next) => {
   const openAi = req.app.get("gpt");
   const { extraId, message, messages, text, converId } = req.body;
 
   //console.log(message);
+
+  //protect block
+  let blockUser;
+  try {
+    blockUser = await USER.findOne({ extraId: extraId });
+  } catch (err) {
+    const errors = new HttpError("Find block user failed", 500);
+    return next(errors);
+  }
+  if (blockUser?.block) {
+    const errors = new HttpError("Sorry your account has been blocked", 500);
+    return next(errors);
+  }
+  //protect block
 
   //protection
   let lmessages;
@@ -120,6 +136,20 @@ const getMessage = async (req, res) => {
 const createMessage = async (req, res, next) => {
   let message;
 
+  //protect block
+  let blockUser;
+  try {
+    blockUser = await USER.findOne({ extraId: req.body.userId });
+  } catch (err) {
+    const errors = new HttpError("Find block user failed", 500);
+    return next(errors);
+  }
+  if (blockUser?.block) {
+    const errors = new HttpError("Sorry your account has been blocked", 500);
+    return next(errors);
+  }
+  //protect block
+
   if (!req.body.token) {
     let messages;
 
@@ -159,6 +189,16 @@ const createMessage = async (req, res, next) => {
 
 const createConversation = async (req, res, next) => {
   let existingConver;
+  //protect block
+  let blockUser;
+  try {
+    blockUser = await USER.findOne({ extraId: req.body.userId });
+  } catch (err) {
+    const errors = new HttpError("Find block user failed", 500);
+    return next(errors);
+  }
+
+  //protect block
 
   try {
     existingConver = await CONVERSATION.find({ userId: req.body.userId });
@@ -198,6 +238,10 @@ const createConversation = async (req, res, next) => {
     );
     return next(errors);
   } else if (existingConver.length !== 0 && req.body.token) {
+    if (blockUser.block) {
+      const errors = new HttpError("Sorry your account has been blocked", 500);
+      return next(errors);
+    }
     try {
       createCon = await CONVERSATION.create(req.body);
     } catch (err) {
@@ -221,10 +265,15 @@ const getConversation = async (req, res, next) => {
 };
 
 const deleteMessages = async (req, res, next) => {
-  let messages;
+  try {
+    await MESSAGE.deleteMany({ conversationId: req.body.converId });
+  } catch (err) {
+    const errors = new HttpError("delete message failed", 500);
+    return next(errors);
+  }
 
   try {
-    messages = await MESSAGE.deleteMany({ conversationId: req.body.converId });
+    await EXTRA.deleteMany({ conversationId: req.body.converId });
   } catch (err) {
     const errors = new HttpError("delete message failed", 500);
     return next(errors);
@@ -273,6 +322,97 @@ const createExtra = async (req, res, next) => {
   res.status(200).json({ result: message });
 };
 
+const getConverHistory = async (req, res) => {
+  let conver;
+
+  try {
+    conver = await CONVERSATION.find({ userId: req.userData.id });
+  } catch (err) {
+    const errors = new HttpError("fetch user conver failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json(conver);
+};
+
+const getMessageHistory = async (req, res, next) => {
+  let message;
+
+  try {
+    message = await MESSAGE.find({ userId: req.userData.id });
+  } catch (err) {
+    const errors = new HttpError("fetch user message failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json(message);
+};
+
+const getSpamHistory = async (req, res, next) => {
+  let message;
+
+  try {
+    message = await MESSAGE.find({
+      $and: [{ userId: req.userData.id }, { spam: true }],
+    });
+  } catch (err) {
+    const errors = new HttpError("fetch user spam message failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json(message);
+};
+
+const updatePassord = async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  let user;
+  let comparePass;
+  let hashPass;
+
+  try {
+    user = await USER.findOne({ extraId: req.userData.id });
+  } catch (err) {
+    const errors = new HttpError("fetch user failed", 500);
+    return next(errors);
+  }
+
+  try {
+    comparePass = await bcrypt.compare(oldPassword, user.password);
+  } catch (err) {
+    const errors = new HttpError("password compare failed", 500);
+    return next(errors);
+  }
+  if (!comparePass) {
+    const errors = new HttpError("Sorry Your password is invalid", 500);
+    return next(errors);
+  }
+
+  if (newPassword.trim().length < 6) {
+    const errors = new HttpError(
+      "Password should be at least 6 characters.",
+      500
+    );
+    return next(errors);
+  }
+  try {
+    hashPass = await bcrypt.hash(newPassword, 12);
+  } catch (err) {
+    const errors = new HttpError("password hashed failed", 500);
+    return next(errors);
+  }
+
+  user.password = hashPass;
+
+  try {
+    await user.save();
+  } catch (err) {
+    const errors = new HttpError("update password failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json({ message: "Password update successful" });
+};
+
 module.exports = {
   createGpt,
   createMessage,
@@ -281,4 +421,8 @@ module.exports = {
   createConversation,
   getConversation,
   deleteMessages,
+  getConverHistory,
+  getMessageHistory,
+  getSpamHistory,
+  updatePassord,
 };

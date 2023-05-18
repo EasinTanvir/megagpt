@@ -10,5 +10,11 @@ router.route("/extra").post(gptRoutes.createExtra);
 router.route("/conversation").post(gptRoutes.createConversation);
 router.route("/getconver").post(gptRoutes.getConversation);
 router.route("/deletemessage").post(gptRoutes.deleteMessages);
+router.route("/user/getconver").get(protectRoutes, gptRoutes.getConverHistory);
+router
+  .route("/user/getmessage")
+  .get(protectRoutes, gptRoutes.getMessageHistory);
+router.route("/user/getspam").get(protectRoutes, gptRoutes.getSpamHistory);
+router.route("/user/updatepass").patch(protectRoutes, gptRoutes.updatePassord);
 
 module.exports = router;

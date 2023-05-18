@@ -15,7 +15,7 @@ module.exports = async (req, res, next) => {
       return next(errors);
     }
     const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
-    req.userData = { id: decodedToken.id };
+    req.userData = { id: decodedToken.id, isAdmin: decodedToken.isAdmin };
     next();
   } catch (err) {
     const errors = new HttpError("Invalid token", 500);

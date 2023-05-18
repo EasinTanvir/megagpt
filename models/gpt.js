@@ -5,6 +5,7 @@ const message = new mongoose.Schema({
   user: { type: String, required: true },
   userId: { type: String },
   conversationId: { type: String },
+  spam: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("message", message);
