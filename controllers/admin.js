@@ -91,6 +91,7 @@ const getMessageHistory = async (req, res, next) => {
   const { id } = req.params;
 
   let message;
+
   const search = req.query.search
     ? {
         user: {
@@ -100,8 +101,20 @@ const getMessageHistory = async (req, res, next) => {
       }
     : {};
 
+  const gpt = req.query.search
+    ? {
+        gpt: {
+          $regex: req.query.search,
+          $options: "i",
+        },
+      }
+    : {};
+
   try {
-    message = await MESSAGE.find({ userId: id, ...search });
+    message = await MESSAGE.find({
+      userId: id,
+      $or: [{ ...search }, { ...gpt }],
+    });
   } catch (err) {
     const errors = new HttpError("fetch admin message failed", 500);
     return next(errors);
@@ -199,6 +212,9 @@ const updateAdminUser = async (req, res, next) => {
 
 const getAllMessages = async (req, res, next) => {
   let message;
+  const pageSize = 5;
+  const page = Number(req.query.pageNumber) || 1;
+  let count;
   const search = req.query.search
     ? {
         user: {
@@ -208,14 +224,26 @@ const getAllMessages = async (req, res, next) => {
       }
     : {};
 
+  const gpt = req.query.search
+    ? {
+        gpt: {
+          $regex: req.query.search,
+          $options: "i",
+        },
+      }
+    : {};
+
   try {
-    message = await MESSAGE.find({ ...search });
+    count = await MESSAGE.count({ $or: [{ ...search }, { ...gpt }] });
+    message = await MESSAGE.find({ $or: [{ ...search }, { ...gpt }] })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1));
   } catch (err) {
     const errors = new HttpError("fetch admin message failed", 500);
     return next(errors);
   }
 
-  res.status(200).json(message);
+  res.status(200).json({ message, page, pages: Math.ceil(count / pageSize) });
 };
 
 module.exports = {
