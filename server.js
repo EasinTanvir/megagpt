@@ -5,9 +5,13 @@ const app = express();
 require("dotenv").config();
 const cors = require("cors");
 const gptRoutes = require("./routes/user");
+const vetRoutes = require("./routes/vet");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const { Configuration, OpenAIApi } = require("openai");
+const APIONE = require("./models/apikey");
+const APITWO = require("./models/apikeytwo");
+const APITHREE = require("./models/apikeythree");
 
 app.use(cors());
 app.use(express.json());
@@ -19,15 +23,50 @@ mongoose
   })
   .catch((err) => console.log(err));
 
-const openApi = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.Secret_Key,
-  })
-);
+app.use(async (req, res, next) => {
+  try {
+    const user = await APIONE.findOne();
 
-app.set("gpt", openApi);
+    const openApi = new OpenAIApi(
+      new Configuration({
+        apiKey: user.apikey,
+      })
+    );
+    app.set("gpt", openApi);
+  } catch (err) {
+    const errors = new HttpError("No Api Key Found", 500);
+    return next(errors);
+  }
+
+  next();
+});
+app.use(async (req, res, next) => {
+  const user = await APITWO.findOne();
+
+  const openApi = new OpenAIApi(
+    new Configuration({
+      apiKey: user.apikey,
+    })
+  );
+  app.set("gpt2", openApi);
+
+  next();
+});
+app.use(async (req, res, next) => {
+  const user = await APITHREE.findOne();
+
+  const openApi = new OpenAIApi(
+    new Configuration({
+      apiKey: user.apikey,
+    })
+  );
+  app.set("gpt3", openApi);
+
+  next();
+});
 
 app.use(gptRoutes);
+app.use(vetRoutes);
 app.use(authRoutes);
 app.use(adminRoutes);
 

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const message = new mongoose.Schema({
-  gpt: { type: String, required: true },
+const vet = new mongoose.Schema({
+  vetgpt: { type: String, required: true },
   user: { type: String, required: true },
   automessage: { type: Array, default: [] },
   userId: { type: String },
@@ -9,4 +9,4 @@ const message = new mongoose.Schema({
   spam: { type: Boolean, default: false },
 });
 
-module.exports = mongoose.model("message", message);
+module.exports = mongoose.model("vet", vet);

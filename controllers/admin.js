@@ -3,7 +3,11 @@ const GUSER = require("../models/googleauth");
 const CONVERSATION = require("../models/conversation");
 const MESSAGE = require("../models/gpt");
 const HttpError = require("../helper/HttpError");
-
+const APIONE = require("../models/apikey");
+const APITWO = require("../models/apikeytwo");
+const APITHREE = require("../models/apikeythree");
+const fs = require("fs");
+const DATAMODEL = require("../models/jsonDataModel");
 const getAdminUsers = async (req, res) => {
   let user;
 
@@ -246,6 +250,76 @@ const getAllMessages = async (req, res, next) => {
   res.status(200).json({ message, page, pages: Math.ceil(count / pageSize) });
 };
 
+const updateApiOne = async (req, res, next) => {
+  try {
+    await APIONE.findOneAndUpdate({ apikey: req.body.apikey });
+  } catch (err) {
+    const errors = new HttpError("fetch user message failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json({ message: "api key update successful" });
+};
+const updateApiTwo = async (req, res, next) => {
+  try {
+    await APITWO.findOneAndUpdate({ apikey: req.body.apikey });
+  } catch (err) {
+    const errors = new HttpError("fetch user message failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json({ message: "api key update successful" });
+};
+const updateApiThree = async (req, res, next) => {
+  try {
+    await APITHREE.findOneAndUpdate({ apikey: req.body.apikey });
+  } catch (err) {
+    const errors = new HttpError("fetch user message failed", 500);
+    return next(errors);
+  }
+
+  res.status(200).json({ message: "api key update successful" });
+};
+
+const updateJsonApiKey = async (req, res, next) => {
+  const filePath = req.file.path;
+
+  // Read the uploaded JSON file
+  fs.readFile(filePath, "utf8", (err, data) => {
+    if (err) {
+      const errors = new HttpError("Error for  reading json file", 500);
+      return next(errors);
+    }
+
+    // Parse the JSON data
+    const jsonData = JSON.parse(data);
+
+    // Iterate over the parsed data and create Mongoose instances
+
+    const newData = new DATAMODEL(jsonData);
+
+    // Save the instance to the database
+    newData
+      .save()
+      .then((savedData) => {
+        // Delete the temporary uploaded file
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            const errors = new HttpError("Error deleting files", 500);
+            return next(errors);
+          }
+        });
+        res
+          .status(200)
+          .json({ message: "File uploaded and data saved successfully" });
+      })
+      .catch((err) => {
+        const errors = new HttpError("Json file upload fail", 500);
+        return next(errors);
+      });
+  });
+};
+
 module.exports = {
   getAdminUsers,
   getAdminConversations,
@@ -257,4 +331,8 @@ module.exports = {
   blockUser,
   updateAdminUser,
   getAllMessages,
+  updateApiOne,
+  updateApiTwo,
+  updateApiThree,
+  updateJsonApiKey,
 };

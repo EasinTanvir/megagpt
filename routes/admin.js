@@ -3,7 +3,8 @@ const router = express.Router();
 const adminRoutes = require("../controllers/admin");
 const protectRoutes = require("../helper/protectRoutes");
 const adminProtectRoutes = require("../helper/adminPrptect");
-
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 router
   .route("/admin/getuser/:id")
   .get(protectRoutes, adminProtectRoutes, adminRoutes.getUserProfile);
@@ -34,5 +35,22 @@ router
 router
   .route("/admin/allmessage")
   .get(protectRoutes, adminProtectRoutes, adminRoutes.getAdminMessages);
+router
+  .route("/gpt/apione")
+  .patch(protectRoutes, adminProtectRoutes, adminRoutes.updateApiOne);
+router
+  .route("/gpt/apitwo")
+  .patch(protectRoutes, adminProtectRoutes, adminRoutes.updateApiTwo);
+router
+  .route("/gpt/apithree")
+  .patch(protectRoutes, adminProtectRoutes, adminRoutes.updateApiThree);
+router
+  .route("/gpt/upload/json")
+  .post(
+    protectRoutes,
+    adminProtectRoutes,
+    upload.single("file"),
+    adminRoutes.updateJsonApiKey
+  );
 
 module.exports = router;
